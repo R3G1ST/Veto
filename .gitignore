@@ -1,5 +1,4 @@
 # Build
-*.exe
 *.o
 *.obj
 *.dll
@@ -21,5 +20,7 @@ Desktop.ini
 .DS_Store
 
 # Veto specific
-bin/
+bin/*.exe
+bin/*.obj
+bin/*.o
 strategies/*.bak
