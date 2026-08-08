@@ -1,0 +1,25 @@
+# Build
+*.exe
+*.o
+*.obj
+*.dll
+*.lib
+*.a
+build/
+cmake-build-*/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Veto specific
+bin/
+strategies/*.bak
