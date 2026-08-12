@@ -48,6 +48,29 @@ bool veto_attack_load_hostlist(veto_attack_config *cfg, const char *path) {
     return true;
 }
 
+bool veto_attack_add_hostlist(veto_attack_config *cfg, const char *path) {
+    FILE *f = fopen(path, "r");
+    if (!f) return false;
+
+    char line[256];
+    size_t added = 0;
+
+    while (fgets(line, sizeof(line), f)) {
+        size_t len = strlen(line);
+        while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) line[--len] = '\0';
+        if (len == 0 || line[0] == '#') continue;
+
+        char **new_list = realloc(cfg->hostlist, (cfg->hostlist_count + 1) * sizeof(char *));
+        if (!new_list) { fclose(f); return false; }
+        cfg->hostlist = new_list;
+        cfg->hostlist[cfg->hostlist_count] = strdup(line);
+        cfg->hostlist_count++;
+        added++;
+    }
+    fclose(f);
+    return added > 0;
+}
+
 bool veto_attack_check_hostlist(const veto_attack_config *cfg, const char *host) {
     if (!cfg || !host || !cfg->hostlist) return false;
 

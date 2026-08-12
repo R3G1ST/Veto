@@ -47,6 +47,10 @@ veto_config *veto_config_load(const char *path) {
     while (fgets(line, sizeof(line), f)) {
         size_t len = strlen(line);
         while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r')) line[--len] = '\0';
+        size_t start = 0;
+        while (start < len && (line[start] == ' ' || line[start] == '\t')) start++;
+        if (start > 0) memmove(line, line + start, len - start + 1);
+        len -= start;
         if (len == 0 || line[0] == '#') continue;
 
         if (line[0] == '[') {
@@ -135,6 +139,8 @@ veto_config *veto_config_load(const char *path) {
                     current_strategy->attacks->rules[idx].split_pos[0] = (uint16_t)atoi(value);
                 }
             } else if (strcmp(key, "hostlist") == 0) {
+                strncpy(current_strategy->attacks->hostlist_path, value,
+                        sizeof(current_strategy->attacks->hostlist_path) - 1);
                 veto_attack_load_hostlist(current_strategy->attacks, value);
             }
         }

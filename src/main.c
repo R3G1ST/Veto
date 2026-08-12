@@ -17,6 +17,7 @@ static void print_usage(const char *prog) {
     printf("\n");
     printf("Options:\n");
     printf("  -c, --config <path>    Load config file\n");
+    printf("  --profile <name>       Apply profile from config\n");
     printf("  -l, --lua <script>     Load Lua strategy script\n");
     printf("  -p, --port <port>      Listen port (default: all)\n");
     printf("  --autotune             Auto-detect best strategy\n");
@@ -70,6 +71,7 @@ int main(int argc, char *argv[]) {
 
     char lua_script[256] = {0};
     char save_config_path[256] = {0};
+    char profile_name[64] = {0};
     bool enable_udp = false;
     bool enable_dns_hijack = false;
 
@@ -96,6 +98,11 @@ int main(int argc, char *argv[]) {
         else if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--port") == 0) {
             if (i + 1 < argc) {
                 cfg->listen_port = (uint16_t)atoi(argv[++i]);
+            }
+        }
+        else if (strcmp(argv[i], "--profile") == 0) {
+            if (i + 1 < argc) {
+                strncpy(profile_name, argv[++i], sizeof(profile_name) - 1);
             }
         }
         else if (strcmp(argv[i], "--attack") == 0) {
@@ -185,6 +192,39 @@ int main(int argc, char *argv[]) {
 
     cfg->max_streams = 4096;
     cfg->reassembly_timeout_ms = 30000;
+
+    if (cfg->config_path[0]) {
+        veto_config *loaded = veto_config_load(cfg->config_path);
+        if (loaded) {
+            if (profile_name[0]) {
+                for (size_t i = 0; i < loaded->profile_count; i++) {
+                    veto_profile *p = loaded->profiles[i];
+                    if (p && strcmp(p->name, profile_name) == 0 && p->enabled) {
+                        printf("[Config] Applying profile: %s\n", p->name);
+                        for (size_t j = 0; j < p->strategy_count; j++) {
+                            veto_strategy *s = p->strategies[j];
+                            if (s && s->enabled && s->attacks) {
+                                for (int k = 0; k < s->attacks->rule_count; k++) {
+                                    int idx = attacks->rule_count;
+                                    if (idx < 16) {
+                                        attacks->rules[idx] = s->attacks->rules[k];
+                                        attacks->rule_count++;
+                                        printf("[Config]   Strategy: %s (type=%d)\n",
+                                               s->name, s->attacks->rules[k].type);
+                                    }
+                                }
+                                if (s->attacks->hostlist_path[0]) {
+                                    veto_attack_add_hostlist(attacks, s->attacks->hostlist_path);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+            veto_config_destroy(loaded);
+        }
+    }
 
     veto_engine *engine = veto_engine_create(cfg);
     if (!engine) {

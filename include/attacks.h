@@ -64,6 +64,7 @@ veto_attack_config *veto_attack_config_create(void);
 void veto_attack_config_destroy(veto_attack_config *cfg);
 
 bool veto_attack_load_hostlist(veto_attack_config *cfg, const char *path);
+bool veto_attack_add_hostlist(veto_attack_config *cfg, const char *path);
 bool veto_attack_check_hostlist(const veto_attack_config *cfg, const char *host);
 
 veto_attack_result veto_attack_execute(
